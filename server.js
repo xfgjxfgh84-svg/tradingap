@@ -5,51 +5,47 @@ const WebSocket = require('ws');
 const cors = require('cors');
 
 const app = express();
-
-// CORS ayarı: Frontend harada host olunacaqsa ora icazə verməliyik
-app.use(cors({
-    origin: "*", // Realda bura frontend linkini yazacaqsınız
-    methods: ["GET", "POST"]
-}));
+app.use(cors());
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*" }
 });
 
-const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@ticker';
-let binanceConn;
+// Daha stabil bağlantı üçün alternativ stream ünvanı
+const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdc@ticker';
 
 function startBinanceStream() {
-    binanceConn = new WebSocket(BINANCE_WS_URL);
+    console.log("Frankfurt üzərindən Binance-a qoşulur...");
+    const binanceConn = new WebSocket(BINANCE_WS_URL);
+
+    binanceConn.on('open', () => {
+        console.log("UĞURLU: Binance bağlantısı açıldı!");
+    });
 
     binanceConn.on('message', (data) => {
         try {
             const raw = JSON.parse(data);
-            const ticker = {
+            io.emit('marketData', {
                 price: parseFloat(raw.c).toFixed(2),
-                change: parseFloat(raw.P).toFixed(2),
-                symbol: "BTC/USDT"
-            };
-            io.emit('marketData', ticker);
+                change: parseFloat(raw.P).toFixed(2)
+            });
         } catch (e) {
-            console.error("Data parse xətası:", e);
+            console.log("Data xətası:", e);
         }
     });
 
-    binanceConn.on('close', () => {
-        console.log('Binance qopdu, 5 san sonra bərpa olunur...');
-        setTimeout(startBinanceStream, 5000);
+    binanceConn.on('error', (err) => {
+        console.log("XƏTA: ", err.message);
     });
 
-    binanceConn.on('error', (err) => console.log("WS Xətası:", err));
+    binanceConn.on('close', () => {
+        console.log("Bağlantı qopdu, 5 saniyəyə bərpa olunur...");
+        setTimeout(startBinanceStream, 5000);
+    });
 }
 
 startBinanceStream();
 
-// VACİB DƏYİŞİKLİK: Hostinq provayderinin verdiyi PORT-u istifadə etmək
-const PORT = process.env.PORT || 4000; 
-
-server.listen(PORT, () => {
-    console.log(`Server ${PORT} portunda aktivdir.`);
-});
+const PORT = process.env.PORT || 4000;
+server.listen(PORT, () => console.log(`Server ${PORT} portunda aktivdir.`));
