@@ -15,8 +15,8 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 // --- AYARLAR ---
-const BOT_TOKEN = 'BURA_BOT_TOKENİNİ_YAZ'; 
-const ADMIN_ID = 'BURA_ID_Nİ_YAZ'; 
+const BOT_TOKEN = '8556304776:AAEJtlVndO0y1hN2go15kKZUEwlj0O-u-kM'; 
+const ADMIN_ID = '8556304776'; 
 const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdc@ticker';
 
 // ---------------------------------------------------------
